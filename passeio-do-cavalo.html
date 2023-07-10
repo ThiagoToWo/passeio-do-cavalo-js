@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="pt-br">
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Passeio do Cavalo</title>
+	<style>
+		body {
+			text-align: center;
+		}
+
+		pre {
+			font-size: 30px;
+		}
+	</style>
+</head>
+
+<body>
+	<h1>Passeio do Cavalo</h1>
+	<form>
+		Início linha (1 a 8): <input type="number" id="inLinha" min=1 max=8 autofocus required><br>
+		Início coluna (1 a 8): <input type="number" id="inColuna" min=1 max=8 required><br>
+		<input type="submit" value="Processar">
+	</form>
+	<pre></pre>
+
+	<script>
+		const form = document.querySelector("form");
+		const result = document.querySelector("pre");
+
+		// tabuleiro heuristico com a quantidade
+		// de movimentos possíveis de cada casa
+		let tabHtc = [
+			[2, 3, 4, 4, 4, 4, 3, 2],
+			[3, 4, 6, 6, 6, 6, 4, 3],
+			[4, 6, 8, 8, 8, 8, 6, 4],
+			[4, 6, 8, 8, 8, 8, 6, 4],
+			[4, 6, 8, 8, 8, 8, 6, 4],
+			[4, 6, 8, 8, 8, 8, 6, 4],
+			[3, 4, 6, 6, 6, 6, 4, 3],
+			[2, 3, 4, 4, 4, 4, 3, 2],
+		];
+		// tabuleiro
+		let tab = [
+			[0, 0, 0, 0, 0, 0, 0, 0],
+			[0, 0, 0, 0, 0, 0, 0, 0],
+			[0, 0, 0, 0, 0, 0, 0, 0],
+			[0, 0, 0, 0, 0, 0, 0, 0],
+			[0, 0, 0, 0, 0, 0, 0, 0],
+			[0, 0, 0, 0, 0, 0, 0, 0],
+			[0, 0, 0, 0, 0, 0, 0, 0],
+			[0, 0, 0, 0, 0, 0, 0, 0],
+		];
+		const shiftI = [-2, -1, 1, 2, 2, 1, -1, -2]; // saltos do cavalo nas linhas
+		const shiftJ = [1, 2, 2, 1, -1, -2, -2, -1]; // saltos do cavalo nas colunas
+		//const shiftI = [2, 1, -1, -2, -2, -1,  1,  2]; // saltos do cavalo nas linhas
+		//const shiftJ = [1, 2,  2,  1, -1, -2, -2, -1]; // saltos do cavalo nas colunas
+		let i, // variável auxiliar para guardar a linha atual
+			j, // variável auxiliar para guardar a coluna atual
+			k, // conta os oito movimentos a partir de uma casa
+			newI, // a linha da nova casa
+			newJ, // a coluna da nova casa
+			temMovimento, // booleana que guarda se tem movimentos posteriores
+			min, // a menor quantidade de movimentos posteriores a partir de uma casa
+			kMin, // qual movimento vai para a casa com menos movimentos posteriores
+			turn; // guarda em qual jogada está
+		let exit = ""; // saída de texto com os resultados
+
+		form.addEventListener("submit", (e) => {
+			e.preventDefault();
+
+			const startI = Number(form.inLinha.value) - 1;
+			const startJ = Number(form.inColuna.value) - 1;
+			turn = 1; // primeira jogada
+			tab[startI][startJ] = turn; // marca no tabuleiro a posição inicial			
+			// configura i e j (variáveis auxiliares) com os valores da posição inicial
+			i = startI;
+			j = startJ;	
+
+			// enquanto não alcançar a última jogada e tiver movimentos posteriores
+			while (turn < 64) {
+				k = 0; // o primeiro movimento a partir da casa atual
+				min = 9; // garante que a primeira casa testada será o min
+
+				while (k < 8) { // para todos os possíveis movimentos do cavalo da posição atual
+					// configura nova linha e nova coluna para esse movimento
+					newI = i + shiftI[k];
+					newJ = j + shiftJ[k];
+
+					if ( // se a nova casa está no tabuleiro...
+						(7 - newI) * (newI) >= 0 &&
+						(7 - newJ) * (newJ) >= 0 &&
+						tab[newI][newJ] == 0 // ... e não foi visitada
+					) {
+						// verifique se ela tem o menor valor de movimentos posteriores
+						if (tabHtc[newI][newJ] < min) {
+							min = tabHtc[newI][newJ]; // atualiza o valor de min
+							kMin = k; // atualiza qual movimento leva a esta casa
+						}
+					}
+
+					k++; // passar para o próximo movimento possível
+				}
+
+				// se min ainda é 9, é porque nenhuma casa testada
+				// nos 8 movimentos está no tabuleiro ou desmarcada
+				if (min == 9) break; // termina por falta de movimento
+
+				// move para a casa de menor moovimentos posteriores
+				newI = i + shiftI[kMin];
+				newJ = j + shiftJ[kMin];
+				turn++; // conta mais uma jogada
+				tab[newI][newJ] = turn; // marca essa jogada na nova casa
+				// atualizar as variávei auxiliares com a nova posição no tabuleiro
+				i = newI;
+				j = newJ;
+			}
+
+
+			// criar o texto do resultado
+			for (let i = 0; i < 8; i++) {
+				for (let j = 0; j < 8; j++) {
+					exit += String(tab[i][j]).padStart(3);
+				}
+
+				exit += "\n";
+			}
+
+			exit += `\nTermina no turno ${turn}.\nLINHA = ${i + 1} e COLUNA = ${j + 1}\n`;
+			exit += "-".repeat(35) + "\n";
+			result.innerText = exit; // imprimir resultado
+
+			// reiniciar o tabuleiro
+			tab = [
+				[0, 0, 0, 0, 0, 0, 0, 0],
+				[0, 0, 0, 0, 0, 0, 0, 0],
+				[0, 0, 0, 0, 0, 0, 0, 0],
+				[0, 0, 0, 0, 0, 0, 0, 0],
+				[0, 0, 0, 0, 0, 0, 0, 0],
+				[0, 0, 0, 0, 0, 0, 0, 0],
+				[0, 0, 0, 0, 0, 0, 0, 0],
+				[0, 0, 0, 0, 0, 0, 0, 0],
+			];
+			exit = "";
+			form.reset();
+			form.inLinha.focus();
+		});	
+	</script>
+</body>
+<html>
